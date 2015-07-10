@@ -62,25 +62,27 @@ module Rubillow
         extract_images(@parser)
         
         @page_views = {
-          :current_month => @parser.xpath('//pageViewCount/currentMonth').first.text,
-          :total => @parser.xpath('//pageViewCount/total').first.text
+          :current_month => @parser.xpath('//pageViewCount/currentMonth').first,
+          :total => @parser.xpath('//pageViewCount/total').first
         }
-        @price = @parser.xpath('//price').first.text
-        @neighborhood = @parser.xpath('//neighborhood').first.text
-        @school_district = @parser.xpath('//schoolDistrict').first.text
-        @elementary_school = @parser.xpath('//elementarySchool').first.text
-        @middle_school = @parser.xpath('//middleSchool').first.text
-        @home_description = @parser.xpath('//homeDescription').first.text
+        @price = @parser.xpath('//price').first
+        @neighborhood = @parser.xpath('//neighborhood').first
+        @school_district = @parser.xpath('//schoolDistrict').first
+        @elementary_school = @parser.xpath('//elementarySchool').first
+        @middle_school = @parser.xpath('//middleSchool').first
+        @home_description = @parser.xpath('//homeDescription').first
         
         @posting = {}
         @parser.xpath('//posting').children.each do |elm|
-          @posting[underscore(elm.name).to_sym] = elm.text
+          @posting[underscore(elm.name).to_sym] = elm
         end
         
         @edited_facts = {}
         @parser.xpath('//editedFacts').children.each do |elm|
-          @edited_facts[underscore(elm.name).to_sym] = elm.text
+          @edited_facts[underscore(elm.name).to_sym] = elm
         end
+
+        extract_text_from_xml_elements
       end
       
       # @private
@@ -92,6 +94,28 @@ module Rubillow
         word.gsub!(/\-/, '_')
         word.downcase!
         word
+      end
+
+      # @private
+      def extract_text_from_xml_elements
+        [:@page_views, :@price, :@neighborhood, :@school_district,
+         :@elementary_school, :@middle_school, :@home_description,
+         :@posting, :@edited_facts].each do |variable_name|
+          variable_value = self.instance_variable_get(variable_name)
+          if variable_value.is_a? Hash
+            text_value = variable_value.each do |h_key, h_value|
+                           variable_value[h_key] = text_or_nil(h_value)
+                         end
+          else
+            text_value = text_or_nil(variable_value)
+          end
+          self.instance_variable_set(variable_name, text_value)
+        end
+      end
+
+      # @private
+      def text_or_nil(value)
+        value.text if value.respond_to? :text
       end
     end
   end
